@@ -1,13 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
+import { AuthenticatedRequest } from '../types/express';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret_key';
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string ;
-  }
-}
 
 interface MyJwtPayload extends JwtPayload {
   userId: string;
@@ -23,18 +18,14 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as MyJwtPayload
+    const decoded = jwt.verify(token, JWT_SECRET) as MyJwtPayload;
 
-    // if(!req.user){
-    //   return res.status(403).json({ error: 'user dosent exist' });
-    // }
-     if (decoded && decoded.userId) {
-       req.user = { userId: decoded.userId };
+    if (decoded && decoded.userId) {
+      req.user = { userId: decoded.userId };
       next();
     } else {
       return res.status(403).json({ error: 'Token payload invalid' });
     }
-
   } catch (err) {
     return res.status(403).json({ error: 'Invalid or expired token' });
   }
