@@ -1,14 +1,11 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-
+import { AuthenticatedRequest } from '../types/express';
 
 const prisma = new PrismaClient();
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-  };
-}
+
+
 export const createItem = async (req: AuthenticatedRequest, res: Response) => {
   const { title, description, imageUrl, price, category, department, duration } = req.body;
   const userId = req.user?.userId;
@@ -37,8 +34,28 @@ export const createItem = async (req: AuthenticatedRequest, res: Response) => {
 
 export const getAllItems = async (req: Request, res: Response) => {
   try {
+    const { search, category, department } = req.query;
+
+    // Build the 'where' clause for the Prisma query
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } },
+      ];
+    }
+
+    if (category) {
+      where.category = category as string;
+    }
+
+    if (department) {
+      where.department = department as string;
+    }
+
     const items = await prisma.item.findMany({
-      orderBy: { createdAt: 'desc' },
+     where, orderBy: { createdAt: 'desc' },
       include: {
         owner: {
           select: {

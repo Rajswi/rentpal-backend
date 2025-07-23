@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import itemRoutes from './routes/items';
+import cloudinaryRoutes from './routes/cloudinary';
 
 dotenv.config();
 const app = express();
@@ -12,6 +13,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes)
 app.use('/api/items', itemRoutes)
+app.use('/api/cloudinary', cloudinaryRoutes);
 
 app.get('/', (req, res) => {
   res.send('RentPal Backend is live!');
