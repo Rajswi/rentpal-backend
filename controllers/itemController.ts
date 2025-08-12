@@ -1,17 +1,27 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { AuthenticatedRequest } from '../types/express';
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-
-
-export const createItem = async (req: AuthenticatedRequest, res: Response) => {
-  const { title, description, imageUrl, price, category, department, duration } = req.body;
+export const createItem = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   const userId = req.user?.userId;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized. User not found on request." });
+    return;
+  }
 
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
+  const {
+    title,
+    description,
+    price,
+    imageUrl,
+    category,
+    department,
+    duration,
+  } = req.body;
   try {
     const item = await prisma.item.create({
       data: {
@@ -25,14 +35,17 @@ export const createItem = async (req: AuthenticatedRequest, res: Response) => {
         ownerId: userId,
       },
     });
-
-    res.status(201).json({ message: 'Item created successfully', item });
+    res.status(201).json({ message: "Item created successfully", item });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to create item' });
+    console.error(err);
+    res.status(500).json({ error: "Failed to create item" });
   }
-}
+};
 
-export const getAllItems = async (req: Request, res: Response) => {
+export const getAllItems = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { search, category, department } = req.query;
 
@@ -41,8 +54,8 @@ export const getAllItems = async (req: Request, res: Response) => {
 
     if (search) {
       where.OR = [
-        { title: { contains: search as string, mode: 'insensitive' } },
-        { description: { contains: search as string, mode: 'insensitive' } },
+        { title: { contains: search as string, mode: "insensitive" } },
+        { description: { contains: search as string, mode: "insensitive" } },
       ];
     }
 
@@ -55,21 +68,21 @@ export const getAllItems = async (req: Request, res: Response) => {
     }
 
     const items = await prisma.item.findMany({
-     where, orderBy: { createdAt: 'desc' },
+      where,
+      orderBy: { createdAt: "desc" },
       include: {
         owner: {
           select: {
             id: true,
             name: true,
             email: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     res.json({ items });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch items' });
+    res.status(500).json({ error: "Failed to fetch items" });
   }
-}
-
+};
